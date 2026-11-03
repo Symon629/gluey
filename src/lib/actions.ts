@@ -2,6 +2,7 @@ import { newId } from '@/lib/ids';
 import { descendantIds } from '@/lib/notes';
 import { syncNotifications } from '@/lib/notifications';
 import { getState, setState } from '@/lib/store';
+import { syncChatCleared, syncMessageAdded, syncNoteChanged, syncNoteCreated, syncNotesDeleted } from '@/lib/sync';
 import type { ChatMessage, FeedPrefs, Note, Pending, Reminder, Topic } from '@/lib/types';
 
 const now = () => new Date().toISOString();
@@ -38,6 +39,7 @@ export function createNote(input: { title: string; content?: string; parentId?: 
     updatedAt: timestamp,
   };
   setState((s) => ({ notes: [note, ...s.notes] }));
+  syncNoteCreated(note.id);
   return note;
 }
 
@@ -45,6 +47,7 @@ export function updateNote(id: string, patch: Partial<Pick<Note, 'title' | 'cont
   setState((s) => ({
     notes: s.notes.map((note) => (note.id === id ? { ...note, ...patch, updatedAt: now() } : note)),
   }));
+  syncNoteChanged(id);
 }
 
 /** Add content to the end of a note, as a new line. */
@@ -57,10 +60,9 @@ export function appendToNote(id: string, content: string) {
 
 /** Delete a note and everything nested inside it. */
 export function deleteNote(id: string) {
-  setState((s) => {
-    const remove = new Set([id, ...descendantIds(s.notes, id)]);
-    return { notes: s.notes.filter((note) => !remove.has(note.id)) };
-  });
+  const remove = new Set([id, ...descendantIds(getState().notes, id)]);
+  setState((s) => ({ notes: s.notes.filter((note) => !remove.has(note.id)) }));
+  syncNotesDeleted([...remove]);
 }
 
 // Chat
@@ -68,6 +70,7 @@ export function deleteNote(id: string) {
 export function addChatMessage(message: Omit<ChatMessage, 'id' | 'createdAt'>): ChatMessage {
   const full: ChatMessage = { ...message, id: newId('m_'), createdAt: now() };
   setState((s) => ({ messages: [...s.messages, full].slice(-300) }));
+  syncMessageAdded(full);
   return full;
 }
 
@@ -77,6 +80,7 @@ export function setPending(pending: Pending | null) {
 
 export function clearChat() {
   setState({ messages: [], pending: null });
+  syncChatCleared();
 }
 
 // Feed

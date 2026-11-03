@@ -30,6 +30,7 @@ const ICONS = {
   task: { ios: 'checklist', material: 'task_alt' },
   globe: { ios: 'globe', material: 'public' },
   external: { ios: 'arrow.up.right.square', material: 'open_in_new' },
+  signOut: { ios: 'rectangle.portrait.and.arrow.right', material: 'logout' },
 } as const satisfies Record<string, { ios: SFSymbol; material: AndroidSymbol }>;
 
 export type IconName = keyof typeof ICONS;

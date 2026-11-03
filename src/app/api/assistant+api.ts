@@ -7,6 +7,7 @@ import {
   sanitizeInterpretation,
 } from '@/lib/assistant/schema';
 import type { AssistantRequest } from '@/lib/assistant/types';
+import { requireUser } from '@/lib/server/auth';
 
 const MODEL = 'claude-opus-5-5';
 
@@ -31,6 +32,10 @@ function isValidRequest(body: unknown): body is AssistantRequest {
 }
 
 export async function POST(request: Request) {
+  // Only signed-in users can spend the Anthropic key.
+  const auth = await requireUser(request);
+  if (auth instanceof Response) return auth;
+
   let body: unknown;
   try {
     body = await request.json();
