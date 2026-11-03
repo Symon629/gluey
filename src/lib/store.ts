@@ -14,12 +14,21 @@ export type AppState = {
   assistantBusy: boolean;
   /** Whether the last reply came from Claude or the on-device parser. Not persisted. */
   assistantMode: 'ai' | 'local' | null;
+  /** Signed-in Supabase user, or null. `authReady` turns true once the saved session is checked. */
+  user: { id: string; email: string | null } | null;
+  authReady: boolean;
+  /** Set when notes or chats could not be loaded or saved to the cloud. */
+  syncError: string | null;
 };
 
-const PERSISTED_KEYS = ['reminders', 'notes', 'messages', 'pending', 'feed'] as const;
+// Notes live in Supabase and chat messages in MongoDB (see lib/sync.ts), so
+// only device-specific data is saved locally.
+const PERSISTED_KEYS = ['reminders', 'pending', 'feed'] as const;
 type PersistedKey = (typeof PERSISTED_KEYS)[number];
 
 const STORAGE_PREFIX = 'gluey:v1:';
+/** Notes and chats were saved under this prefix before they moved to the cloud. */
+export const LEGACY_STORAGE_PREFIX = STORAGE_PREFIX;
 
 const initialState: AppState = {
   hydrated: false,
@@ -30,6 +39,9 @@ const initialState: AppState = {
   feed: { onboarded: false, topics: [], dismissedSuggestions: [], hiddenArticles: [] },
   assistantBusy: false,
   assistantMode: null,
+  user: null,
+  authReady: false,
+  syncError: null,
 };
 
 let state: AppState = initialState;

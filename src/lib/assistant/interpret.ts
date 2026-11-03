@@ -1,4 +1,5 @@
 import { addDays, describeWhen, formatDay, formatTime, occurrencesBetween, toLocalDateTime, weekdayName } from '@/lib/dates';
+import { apiFetch } from '@/lib/api';
 import { getState } from '@/lib/store';
 
 import { localInterpret } from './local-parser';
@@ -48,11 +49,8 @@ async function askClaude(message: string): Promise<Interpretation | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
-    // Relative URLs resolve to the Expo dev server in development, and to the
-    // expo-router "origin" in production builds.
-    const response = await fetch('/api/assistant', {
+    const response = await apiFetch('/api/assistant', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(buildRequest(message)),
       signal: controller.signal,
     });

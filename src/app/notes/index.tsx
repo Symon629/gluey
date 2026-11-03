@@ -20,6 +20,7 @@ export default function NotesScreen() {
   const router = useRouter();
   const theme = useTheme();
   const notes = useStore((s) => s.notes);
+  const syncError = useStore((s) => s.syncError);
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -58,7 +59,9 @@ export default function NotesScreen() {
     <Screen>
       <ScreenHeader
         title="Notes"
-        subtitle={notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}` : undefined}
+        subtitle={
+          syncError ?? (notes.length ? `${notes.length} note${notes.length === 1 ? '' : 's'}` : undefined)
+        }
         right={<IconButton icon="plus" label="New note" tone="accent" size={22} onPress={addNote} />}
       />
       {notes.length ? (

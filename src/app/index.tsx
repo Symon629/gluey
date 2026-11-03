@@ -10,6 +10,7 @@ import { Screen, ScreenHeader } from '@/components/ui/screen';
 import { Spacing } from '@/constants/theme';
 import { useWindowTopOffset } from '@/hooks/use-window-top-offset';
 import { clearChat } from '@/lib/actions';
+import { signOut } from '@/lib/auth';
 import { chooseOption, sendUserText } from '@/lib/assistant/conversation';
 import { confirmAction } from '@/lib/confirm';
 import { useStore } from '@/lib/store';
@@ -28,6 +29,8 @@ export default function ChatScreen() {
   const pending = useStore((s) => s.pending);
   const busy = useStore((s) => s.assistantBusy);
   const mode = useStore((s) => s.assistantMode);
+  const syncError = useStore((s) => s.syncError);
+  const email = useStore((s) => s.user?.email);
   const data = useMemo(() => [...messages].reverse(), [messages]);
   const { onLayout: onKeyboardAreaLayout, offset: keyboardOffset } = useWindowTopOffset();
 
@@ -37,8 +40,15 @@ export default function ChatScreen() {
     }
   };
 
-  const subtitle =
-    mode === 'local'
+  const onSignOut = async () => {
+    if (await confirmAction('Sign out?', email ? `You're signed in as ${email}.` : 'Your notes and chats stay saved to your account.', 'Sign out')) {
+      await signOut();
+    }
+  };
+
+  const subtitle = syncError
+    ? syncError
+    : mode === 'local'
       ? 'Offline mode: basic requests only'
       : mode === 'ai'
         ? 'Powered by Claude'
@@ -49,7 +59,12 @@ export default function ChatScreen() {
       <ScreenHeader
         title="Chat"
         subtitle={subtitle}
-        right={messages.length ? <IconButton icon="trash" label="Clear chat" onPress={onClear} /> : null}
+        right={
+          <View style={styles.headerActions}>
+            {messages.length ? <IconButton icon="trash" label="Clear chat" onPress={onClear} /> : null}
+            <IconButton icon="signOut" label="Sign out" onPress={() => void onSignOut()} />
+          </View>
+        }
       />
       {/*
         The offset accounts for the status bar above this screen. Without it the keyboard
@@ -107,6 +122,10 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.one,
   },
   list: {
     paddingHorizontal: Spacing.three,
